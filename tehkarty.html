@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тех.карты — себестоимость</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F7F4EC;--paper-2:#EFEADC;--ink:#2A2520;--herb:#4F6B3C;--herb-dark:#3C5230;--paprika:#B2492F;--amber:#A8782B;--sand:#DDD4C0;--slate:#8A8174;--white:#FFFFFF;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;}
+  #app{max-width:1200px;margin:0 auto;padding:24px 20px 60px;}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:22px;border-bottom:2px solid var(--ink);padding-bottom:14px;}
+  .brand .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:var(--herb-dark);text-transform:uppercase;display:block;margin-bottom:4px;}
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0;}
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .currency-field{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--slate);}
+  .currency-field input{width:44px;text-align:center;border:1px solid var(--sand);background:var(--white);border-radius:4px;padding:4px 2px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);}
+  .save-status{font-size:11px;color:var(--slate);font-family:'IBM Plex Mono',monospace;min-width:90px;text-align:right;}
+  .save-status.ok{color:var(--herb-dark);}.save-status.err{color:var(--paprika);}
+  .tabs{display:flex;gap:4px;margin-top:14px;}
+  .tab-btn{font-family:'Inter',sans-serif;font-weight:600;font-size:13px;background:transparent;border:1px solid var(--ink);border-bottom:none;padding:8px 18px;border-radius:6px 6px 0 0;cursor:pointer;color:var(--ink);position:relative;top:1px;}
+  .tab-btn.active{background:var(--ink);color:var(--paper);}
+  .tab-btn:not(.active):hover{background:var(--paper-2);}
+  .panel{background:var(--white);border:1px solid var(--sand);border-radius:10px;padding:20px;}
+  .btn{font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;border-radius:7px;padding:9px 16px;border:1px solid transparent;}
+  .btn-primary{background:var(--herb);color:var(--white);}.btn-primary:hover{background:var(--herb-dark);}
+  .btn-ghost{background:transparent;border:1px solid var(--sand);color:var(--ink);}.btn-ghost:hover{background:var(--paper-2);}
+  .btn-danger{background:transparent;border:1px solid var(--paprika);color:var(--paprika);}.btn-danger:hover{background:var(--paprika);color:var(--white);}
+  .btn-sm{padding:5px 10px;font-size:12px;border-radius:5px;}
+  input[type=text],input[type=number]{font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);border:1px solid var(--sand);border-radius:6px;padding:8px 10px;background:var(--white);width:100%;}
+  input:focus{outline:2px solid var(--herb);outline-offset:1px;}
+  select{font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);border:1px solid var(--sand);border-radius:6px;padding:8px 10px;background:var(--white);width:100%;}
+  label{font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--slate);font-weight:600;display:block;margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .row-fields{display:flex;gap:10px;flex-wrap:wrap;}
+  .row-fields>.field{flex:1;min-width:120px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .muted{color:var(--slate);}
+  .empty-state{padding:48px 20px;text-align:center;color:var(--slate);}
+  .empty-state h3{font-family:'Fraunces',serif;color:var(--ink);font-size:18px;margin:0 0 8px;}
+  .empty-state p{margin:0 0 16px;font-size:13px;}
+  .error-banner{background:#FBEAE5;border:1px solid var(--paprika);color:var(--paprika);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .loading{padding:60px 0;text-align:center;color:var(--slate);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--slate);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--sand);}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--paper-2);font-size:13px;vertical-align:middle;}
+  tbody tr:hover{background:var(--paper-2);}
+  td.num,th.num{text-align:right;}
+  .tag{display:inline-block;background:var(--paper-2);color:var(--slate);font-size:11px;padding:2px 8px;border-radius:20px;}
+  .actions-cell{white-space:nowrap;text-align:right;}
+  .icon-btn{background:none;border:none;cursor:pointer;color:var(--slate);font-size:13px;padding:4px 6px;border-radius:4px;}
+  .icon-btn:hover{background:var(--paper-2);color:var(--ink);}
+  .confirm-inline{display:flex;gap:6px;justify-content:flex-end;align-items:center;}
+  .confirm-inline span{font-size:12px;color:var(--paprika);}
+  .inline-form-row td{background:var(--paper-2);padding:12px;}
+  .inline-form-wrap{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .inline-form-wrap .ifield{display:flex;flex-direction:column;}
+  .inline-form-wrap .ifield label{margin-bottom:3px;}
+  .inline-hint{font-size:11px;color:var(--herb-dark);font-family:'IBM Plex Mono',monospace;margin-top:6px;}
+  .tc-layout{display:flex;gap:18px;align-items:flex-start;}
+  .tc-list{width:250px;flex-shrink:0;}
+  .tc-list-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--sand);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--white);}
+  .tc-list-item:hover{border-color:var(--herb);}
+  .tc-list-item.selected{border-color:var(--ink);background:var(--paper-2);}
+  .tc-list-item .lname{font-weight:600;font-size:13px;}
+  .tc-list-item .lcat{font-size:11px;color:var(--slate);}
+  .fc-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+  .fc-good{background:#E7EFE1;color:var(--herb-dark);}
+  .fc-warn{background:#F6EBD9;color:var(--amber);}
+  .fc-bad{background:#FBEAE5;color:var(--paprika);}
+  .tc-editor{flex:1;min-width:0;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}
+  .tc-form{flex:1;min-width:300px;}
+  .tc-form-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .lines-header{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px;}
+  .lines-header h4{font-family:'Fraunces',serif;font-size:14px;margin:0;font-weight:600;}
+  .ing-line{border:1px solid var(--sand);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--paper-2);}
+  .ing-line-top{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+  .ing-line-top select{flex:1;background:var(--white);}
+  .ing-line-fields{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;}
+  .lf{display:flex;flex-direction:column;}
+  .lf label{margin-bottom:3px;white-space:nowrap;}
+  .lf input[type=number]{width:80px;background:var(--white);}
+  .cb-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);white-space:nowrap;background:var(--white);border:1px solid var(--sand);border-radius:6px;padding:0 10px;cursor:pointer;height:37px;}
+  .cb-label input{margin:0;width:auto;}
+  .netto-row{display:flex;gap:6px;align-items:center;}
+  .cost-disp{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;white-space:nowrap;padding:8px 0;margin-left:auto;}
+  .stat-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;}
+  .stat-hint{font-size:10px;color:var(--slate);margin-top:2px;}
+  .ticket{width:250px;flex-shrink:0;background:var(--white);border:1px solid var(--sand);border-top:3px dashed var(--ink);border-bottom:3px dashed var(--ink);border-radius:4px;padding:18px 16px;box-shadow:0 4px 14px rgba(42,37,32,.06);transform:rotate(-.3deg);}
+  .tkt-eye{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--slate);text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:2px;}
+  .tkt-title{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin:0 0 12px;border-bottom:1px dashed var(--sand);padding-bottom:10px;}
+  .tkt-line{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;font-size:12px;}
+  .tkt-line .ln{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+  .tkt-line .ld{flex:1;border-bottom:1px dotted var(--slate);transform:translateY(-3px);min-width:6px;}
+  .tkt-line .lv{font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .tkt-div{border-top:1px dashed var(--sand);margin:10px 0;}
+  .tkt-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .tkt-row.big{font-weight:700;font-size:15px;font-family:'IBM Plex Mono',monospace;}
+  .tkt-fc{margin-top:10px;text-align:center;padding:8px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;line-height:1.5;}
+  .tkt-empty{font-size:12px;color:var(--slate);text-align:center;padding:14px 0;}
+  @media(max-width:760px){.tc-layout,.tc-editor{flex-direction:column;}.tc-list,.ticket{width:100%;}.ticket{transform:none;}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Загружаем данные…</div></div>
+<script>
+(function(){
+"use strict";
+var S={tab:'ingredients',ingredients:[],techcards:[],settings:{currency:'₽'},loading:true,error:null,selectedCardId:null,editingIng:null,confirmDelete:null,saveStatus:''};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function debounce(fn,d){var t;return function(){var a=arguments;clearTimeout(t);t=setTimeout(function(){fn.apply(null,a);},d);};}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+function fmt(n){if(isNaN(n)||n==null)n=0;return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});}
+var CUR=function(){return S.settings.currency;};
+
+async function loadAll(){
+  try{
+    var iv=null,tv=null,sv=null;
+    try{iv=await window.storage.get('ingredients');}catch(e){}
+    try{tv=await window.storage.get('techcards');}catch(e){}
+    try{sv=await window.storage.get('settings');}catch(e){}
+    S.ingredients=iv?JSON.parse(iv.value):[];
+    S.techcards=tv?JSON.parse(tv.value):[];
+    S.settings=sv?JSON.parse(sv.value):{currency:'₽'};
+  }catch(e){S.error='Не удалось загрузить данные.';}
+  S.loading=false;render();
+}
+async function saveIngs(){try{await window.storage.set('ingredients',JSON.stringify(S.ingredients));return true;}catch(e){S.error='Ошибка сохранения сырья.';render();return false;}}
+var saveTcDebounced=debounce(async function(){
+  try{await window.storage.set('techcards',JSON.stringify(S.techcards));S.saveStatus='ok';}catch(e){S.saveStatus='err';}
+  var el=document.getElementById('save-status-el');
+  if(el){el.textContent=S.saveStatus==='ok'?'Сохранено':'Ошибка сохранения';el.className='save-status '+(S.saveStatus==='ok'?'ok':'err');}
+},500);
+async function saveSettings(){try{await window.storage.set('settings',JSON.stringify(S.settings));}catch(e){}}
+
+function ingById(id){for(var i=0;i<S.ingredients.length;i++)if(S.ingredients[i].id===id)return S.ingredients[i];return null;}
+function findLine(card,lid){return(card.lines||[]).find(function(l){return l.id===lid;})||null;}
+function ppu(ing){var sz=parseFloat(ing.packageSize)||0,pr=parseFloat(ing.packagePrice)||0;return sz>0?pr/sz:0;}
+function autoNetto(ing,brutto,uc,ut){
+  var f=1;
+  if(uc)f*=(1-(parseFloat(ing.lossCleaning)||0)/100);
+  if(ut)f*=(1-(parseFloat(ing.lossThermo)||0)/100);
+  return Math.round(brutto*f*100)/100;
+}
+function computeCard(card){
+  var totalCost=0,totalNetto=0;
+  var lines=(card.lines||[]).map(function(line){
+    var ing=ingById(line.ingredientId);
+    var br=parseFloat(line.brutto)||0;
+    var cost=ing?br*ppu(ing):0;
+    var nt;
+    if(line.nettoManual&&line.netto!==''&&line.netto!=null){nt=parseFloat(line.netto)||0;}
+    else{nt=ing?autoNetto(ing,br,line.useCleaning,line.useThermo):0;}
+    totalCost+=cost;totalNetto+=nt;
+    return{line:line,ing:ing,br:br,cost:cost,nt:nt};
+  });
+  var sp=parseFloat(card.sellingPrice)||0;
+  var fc=sp>0?(totalCost/sp)*100:null;
+  var margin=sp>0?sp-totalCost:null;
+  var markup=totalCost>0&&sp>0?((sp-totalCost)/totalCost)*100:null;
+  return{lines:lines,totalCost:totalCost,totalNetto:totalNetto,sp:sp,fc:fc,margin:margin,markup:markup};
+}
+function fcCls(p){if(p===null)return'';if(p<=33)return'fc-good';if(p<=45)return'fc-warn';return'fc-bad';}
+function currentCard(){return S.techcards.find(function(c){return c.id===S.selectedCardId;})||null;}
+
+function render(){
+  var app=document.getElementById('app');
+  if(S.loading){app.innerHTML='<div class="loading">Загружаем данные…</div>';return;}
+  var h=topbarH();
+  h+='<main id="content">';
+  if(S.error)h+='<div class="error-banner"><span>'+esc(S.error)+'</span><button class="btn btn-ghost btn-sm" data-action="dismiss-error">Скрыть</button></div>';
+  h+=S.tab==='ingredients'?ingTabH():tcTabH();
+  h+='</main>';
+  app.innerHTML=h;
+}
+
+function topbarH(){
+  return '<header class="topbar">'+
+    '<div class="brand"><span class="eyebrow">учёт кухни</span><h1>Тех.карты и себестоимость</h1>'+
+    '<div class="tabs">'+
+      '<button class="tab-btn '+(S.tab==='ingredients'?'active':'')+'" data-action="set-tab" data-tab="ingredients">Сырьё</button>'+
+      '<button class="tab-btn '+(S.tab==='techcards'?'active':'')+'" data-action="set-tab" data-tab="techcards">Тех.карты</button>'+
+    '</div></div>'+
+    '<div class="topbar-right"><span id="save-status-el" class="save-status"></span>'+
+    '<div class="currency-field">Валюта <input type="text" maxlength="3" id="currency-input" value="'+esc(S.settings.currency)+'"></div></div>'+
+  '</header>';
+}
+
+// ---- INGREDIENTS TAB ----
+function ingFormRow(ing){
+  var nw=!ing;
+  var v=ing||{name:'',unit:'г',category:'',packagePrice:'',packageSize:'',lossCleaning:'',lossThermo:''};
+  var id=nw?'new':ing.id;
+  var hint='';
+  var pr=parseFloat(v.packagePrice)||0,sz=parseFloat(v.packageSize)||0;
+  if(sz>0)hint='Цена за 1 '+v.unit+': '+fmt(pr/sz)+' '+CUR();
+  else hint='Укажите объём упаковки → рассчитается цена за единицу';
+  return '<tr class="inline-form-row" data-row-id="'+id+'"><td colspan="7"><div class="inline-form-wrap">'+
+    '<div class="ifield" style="flex:2;min-width:150px"><label>Название</label><input type="text" data-f="name" value="'+esc(v.name)+'" placeholder="Мука пшеничная"></div>'+
+    '<div class="ifield" style="width:110px"><label>Категория</label><input type="text" data-f="category" value="'+esc(v.category)+'" placeholder="Бакалея"></div>'+
+    '<div class="ifield" style="width:60px"><label>Ед.</label><select data-f="unit">'+
+      ['г','мл','шт'].map(function(u){return'<option value="'+u+'" '+(v.unit===u?'selected':'')+'>'+u+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="ifield" style="width:90px"><label>Закупка, '+esc(CUR())+'</label><input type="number" step="0.01" min="0" data-f="packagePrice" value="'+esc(v.packagePrice)+'" placeholder="450"></div>'+
+    '<div class="ifield" style="width:90px"><label>Объём уп.</label><input type="number" step="0.01" min="0" data-f="packageSize" value="'+esc(v.packageSize)+'" placeholder="1000"></div>'+
+    '<div class="ifield" style="width:74px"><label>% чистки</label><input type="number" step="1" min="0" max="99" data-f="lossCleaning" value="'+esc(v.lossCleaning)+'" placeholder="0"></div>'+
+    '<div class="ifield" style="width:74px"><label>% термо</label><input type="number" step="1" min="0" max="99" data-f="lossThermo" value="'+esc(v.lossThermo)+'" placeholder="0"></div>'+
+    '<div class="ifield" style="display:flex;gap:6px;align-self:flex-end">'+
+      '<button class="btn btn-primary btn-sm" data-action="save-ing" data-id="'+id+'">Сохранить</button>'+
+      '<button class="btn btn-ghost btn-sm" data-action="cancel-ing">Отмена</button>'+
+    '</div>'+
+  '</div><div class="inline-hint" data-hint-for="'+id+'">'+hint+'</div></td></tr>';
+}
+
+function ingTabH(){
+  var h='<div class="panel">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'+
+     '<h3 style="font-family:Fraunces,serif;margin:0;font-size:16px;">Сырьё и закупочные цены</h3>'+
+     (S.editingIng?'':'<button class="btn btn-primary" data-action="new-ing">+ Добавить сырьё</button>')+
+     '</div>';
+  if(S.ingredients.length===0&&S.editingIng!=='new'){
+    h+='<div class="empty-state"><h3>Пока нет ни одного ингредиента</h3><p>Добавьте сырьё с ценой — это основа расчёта себестоимости.</p><button class="btn btn-primary" data-action="new-ing">+ Добавить сырьё</button></div></div>';
+    return h;
+  }
+  h+='<table><thead><tr><th>Название</th><th>Категория</th><th>Ед.</th><th>% чистки</th><th>% термо</th><th class="num">Цена за ед.</th><th></th></tr></thead><tbody>';
+  if(S.editingIng==='new')h+=ingFormRow(null);
+  S.ingredients.forEach(function(ing){
+    if(S.editingIng===ing.id){h+=ingFormRow(ing);return;}
+    var p=ppu(ing);
+    var lc=parseFloat(ing.lossCleaning)||0,lt=parseFloat(ing.lossThermo)||0;
+    h+='<tr><td>'+esc(ing.name)+'</td>'+
+       '<td>'+(ing.category?'<span class="tag">'+esc(ing.category)+'</span>':'<span class="muted">—</span>')+'</td>'+
+       '<td>'+esc(ing.unit)+'</td>'+
+       '<td class="muted" style="font-size:12px;">'+(lc?lc+'%':'—')+'</td>'+
+       '<td class="muted" style="font-size:12px;">'+(lt?lt+'%':'—')+'</td>'+
+       '<td class="num mono">'+fmt(p)+'</td>'+
+       '<td class="actions-cell">';
+    if(S.confirmDelete&&S.confirmDelete.type==='ing'&&S.confirmDelete.id===ing.id){
+      h+='<div class="confirm-inline"><span>Удалить?</span>'+
+         '<button class="btn btn-danger btn-sm" data-action="confirm-del-ing" data-id="'+ing.id+'">Да</button>'+
+         '<button class="btn btn-ghost btn-sm" data-action="cancel-delete">Нет</button></div>';
+    }else{
+      h+='<button class="icon-btn" data-action="edit-ing" data-id="'+ing.id+'">✎</button>'+
+         '<button class="icon-btn" data-action="ask-del-ing" data-id="'+ing.id+'">✕</button>';
+    }
+    h+='</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+// ---- TC TAB ----
+function tcListH(){
+  var h='<button class="btn btn-primary" style="width:100%;margin-bottom:10px;" data-action="new-card">+ Новая карта</button>';
+  if(!S.techcards.length)h+='<p class="muted" style="font-size:12px;">Список пуст — создайте первую карту.</p>';
+  S.techcards.forEach(function(card){
+    var d=computeCard(card);
+    var badge=d.fc!==null?'<span class="fc-badge '+fcCls(d.fc)+'">'+d.fc.toFixed(0)+'%</span>':'';
+    h+='<div class="tc-list-item '+(S.selectedCardId===card.id?'selected':'')+'" data-action="select-card" data-id="'+card.id+'">'+
+       '<div><div class="lname">'+(esc(card.name)||'<span class="muted">Без названия</span>')+'</div>'+
+       (card.category?'<div class="lcat">'+esc(card.category)+'</div>':'')+
+       '</div>'+badge+'</div>';
+  });
+  return h;
+}
+
+function tcFormH(card){
+  var d=computeCard(card);
+  var h='';
+  h+='<div class="tc-form-header"><div style="flex:1"><div class="field"><label>Название блюда</label><input type="text" data-cf="name" value="'+esc(card.name)+'" placeholder="Например, Цезарь с курицей"></div></div>'+
+     '<button class="btn btn-danger btn-sm" data-action="ask-del-card" data-id="'+card.id+'">Удалить</button></div>';
+  if(S.confirmDelete&&S.confirmDelete.type==='card'&&S.confirmDelete.id===card.id){
+    h+='<div class="error-banner"><span>Удалить тех.карту навсегда?</span>'+
+       '<span style="display:flex;gap:6px;"><button class="btn btn-danger btn-sm" data-action="confirm-del-card" data-id="'+card.id+'">Удалить</button>'+
+       '<button class="btn btn-ghost btn-sm" data-action="cancel-delete">Отмена</button></span></div>';
+  }
+  h+='<div class="row-fields">'+
+     '<div class="field"><label>Категория</label><input type="text" data-cf="category" value="'+esc(card.category)+'" placeholder="Горячее, десерты…"></div>'+
+     '<div class="field"><label>Выход, г / мл</label><div class="stat-val">'+fmt(d.totalNetto)+'</div><div class="stat-hint">сумма нетто всех ингредиентов</div></div>'+
+     '<div class="field"><label>Цена продажи, '+esc(CUR())+'</label><input type="number" min="0" step="0.01" data-cf="sellingPrice" value="'+esc(card.sellingPrice)+'"></div>'+
+     '</div>';
+  h+='<div class="lines-header"><h4>Состав</h4>'+
+     (S.ingredients.length?'<button class="btn btn-ghost btn-sm" data-action="add-line" data-id="'+card.id+'">+ ингредиент</button>':
+     '<span class="muted" style="font-size:12px;">Сначала добавьте сырьё на вкладке «Сырьё»</span>')+
+     '</div>';
+  d.lines.forEach(function(item){
+    var line=item.line,ing=item.ing;
+    var unit=ing?ing.unit:'';
+    var lc=ing?(parseFloat(ing.lossCleaning)||0):0;
+    var lt=ing?(parseFloat(ing.lossThermo)||0):0;
+    var ntval=line.nettoManual&&line.netto!==''&&line.netto!=null?line.netto:item.nt;
+    h+='<div class="ing-line"><div class="ing-line-top">'+
+       '<select data-lf="ingredientId" data-line="'+line.id+'"><option value="">— выбрать —</option>'+
+       S.ingredients.map(function(i){return'<option value="'+i.id+'" '+(i.id===line.ingredientId?'selected':'')+'>'+esc(i.name)+'</option>';}).join('')+
+       '</select>'+
+       '<button class="icon-btn" data-action="remove-line" data-id="'+card.id+'" data-line="'+line.id+'" title="Убрать">✕</button>'+
+       '</div><div class="ing-line-fields">'+
+       '<div class="lf"><label>Брутто, '+esc(unit)+'</label><input type="number" min="0" step="0.01" data-lf="brutto" data-line="'+line.id+'" value="'+esc(line.brutto)+'" placeholder="0"></div>'+
+       '<label class="cb-label"><input type="checkbox" data-lf="useCleaning" data-line="'+line.id+'" '+(line.useCleaning?'checked':'')+'>Чистка '+lc+'%</label>'+
+       '<label class="cb-label"><input type="checkbox" data-lf="useThermo" data-line="'+line.id+'" '+(line.useThermo?'checked':'')+'>Термо '+lt+'%</label>'+
+       '<div class="lf"><label>Нетто, '+esc(unit)+'</label>'+
+       '<div class="netto-row"><input type="number" min="0" step="0.01" data-lf="netto" data-line="'+line.id+'" value="'+esc(ntval)+'">'+
+       (line.nettoManual?'<button class="icon-btn" data-action="reset-netto" data-line="'+line.id+'" title="Пересчитать авто">⟲</button>':'')+
+       '</div></div>'+
+       '<div class="lf" style="margin-left:auto"><label>Стоимость</label><div class="cost-disp">'+fmt(item.cost)+' '+esc(CUR())+'</div></div>'+
+       '</div></div>';
+  });
+  return h;
+}
+
+function ticketH(card){
+  var d=computeCard(card);
+  var h='<div class="tkt-eye"><span>расчёт</span><span>'+d.lines.length+' поз.</span></div>'+
+        '<div class="tkt-title">'+(esc(card.name)||'Без названия')+'</div>';
+  if(!d.lines.length){h+='<div class="tkt-empty">Добавьте ингредиенты — расчёт появится здесь</div>';}
+  else{
+    d.lines.forEach(function(item){
+      h+='<div class="tkt-line"><span class="ln">'+(item.ing?esc(item.ing.name):'—')+'</span><span class="ld"></span><span class="lv">'+fmt(item.cost)+'</span></div>';
+    });
+  }
+  h+='<div class="tkt-div"></div>'+
+     '<div class="tkt-row"><span>Выход</span><span class="mono">'+fmt(d.totalNetto)+'</span></div>'+
+     '<div class="tkt-row big"><span>Себестоимость</span><span>'+fmt(d.totalCost)+' '+esc(CUR())+'</span></div>';
+  if(d.fc!==null){
+    h+='<div class="tkt-fc '+fcCls(d.fc)+'">Food cost: '+d.fc.toFixed(1)+'%<br>Наценка: '+(d.markup!==null?d.markup.toFixed(0)+'%':'—')+' · маржа '+fmt(d.margin)+' '+esc(CUR())+'</div>';
+  }else{
+    h+='<div class="tkt-empty">Укажите цену продажи → увидите food cost и наценку</div>';
+  }
+  return h;
+}
+
+function tcTabH(){
+  var h='<div class="tc-layout"><div class="tc-list" id="tc-list">'+tcListH()+'</div>';
+  var card=currentCard();
+  if(!card){
+    h+='<div class="panel" style="flex:1"><div class="empty-state"><h3>Выберите карту слева</h3><p>Или создайте новую — расчёт появится сразу, как добавите ингредиенты.</p></div></div></div>';
+    return h;
+  }
+  h+='<div class="tc-editor">'+
+     '<div class="tc-form panel" id="tc-form">'+tcFormH(card)+'</div>'+
+     '<div class="ticket" id="ticket">'+ticketH(card)+'</div>'+
+     '</div></div>';
+  return h;
+}
+
+function softRefresh(){
+  var card=currentCard();
+  var listEl=document.getElementById('tc-list');
+  if(listEl)listEl.innerHTML=tcListH();
+  if(!card)return;
+  var ticketEl=document.getElementById('ticket');
+  if(ticketEl)ticketEl.innerHTML=ticketH(card);
+  // update cost displays inline without re-rendering inputs
+  var d=computeCard(card);
+  d.lines.forEach(function(item){
+    var el=document.querySelector('.cost-disp[data-for="'+item.line.id+'"]');
+    // fallback: update netto field if not manual
+    if(!item.line.nettoManual){
+      var netEl=document.querySelector('input[data-lf="netto"][data-line="'+item.line.id+'"]');
+      if(netEl&&document.activeElement!==netEl)netEl.value=item.nt;
+    }
+  });
+  // update yield stat
+  var statEl=document.querySelector('.stat-val');
+  if(statEl)statEl.textContent=fmt(d.totalNetto);
+}
+
+// ---- ACTIONS ----
+function saveIngFromForm(id){
+  var row=document.querySelector('[data-row-id="'+id+'"]');if(!row)return;
+  var v={};row.querySelectorAll('[data-f]').forEach(function(i){v[i.getAttribute('data-f')]=i.value;});
+  if(!v.name||!v.name.trim()){S.error='Укажите название ингредиента.';render();return;}
+  if(id==='new'){
+    S.ingredients.push({id:uid(),name:v.name.trim(),unit:v.unit,category:v.category||'',packagePrice:v.packagePrice||0,packageSize:v.packageSize||0,lossCleaning:v.lossCleaning||0,lossThermo:v.lossThermo||0});
+  }else{
+    var ing=ingById(id);
+    if(ing){Object.assign(ing,{name:v.name.trim(),unit:v.unit,category:v.category||'',packagePrice:v.packagePrice||0,packageSize:v.packageSize||0,lossCleaning:v.lossCleaning||0,lossThermo:v.lossThermo||0});}
+  }
+  S.editingIng=null;S.error=null;
+  saveIngs().then(render);
+}
+
+// ---- EVENTS ----
+document.getElementById('app').addEventListener('click',function(e){
+  var t=e.target.closest('[data-action]');if(!t)return;
+  var a=t.getAttribute('data-action');
+  if(a==='set-tab'){S.tab=t.getAttribute('data-tab');S.editingIng=null;S.confirmDelete=null;render();}
+  else if(a==='dismiss-error'){S.error=null;render();}
+  else if(a==='new-ing'){S.editingIng='new';render();setTimeout(function(){var el=document.querySelector('.inline-form-row input[data-f="name"]');if(el)el.focus();},0);}
+  else if(a==='edit-ing'){S.editingIng=t.getAttribute('data-id');render();}
+  else if(a==='cancel-ing'){S.editingIng=null;render();}
+  else if(a==='save-ing'){saveIngFromForm(t.getAttribute('data-id'));}
+  else if(a==='ask-del-ing'){S.confirmDelete={type:'ing',id:t.getAttribute('data-id')};render();}
+  else if(a==='confirm-del-ing'){S.ingredients=S.ingredients.filter(function(i){return i.id!==t.getAttribute('data-id');});S.confirmDelete=null;saveIngs().then(render);}
+  else if(a==='cancel-delete'){S.confirmDelete=null;render();}
+  else if(a==='new-card'){var c={id:uid(),name:'',category:'',sellingPrice:'',lines:[]};S.techcards.unshift(c);S.selectedCardId=c.id;saveTcDebounced();render();}
+  else if(a==='select-card'){S.selectedCardId=t.getAttribute('data-id');S.confirmDelete=null;render();}
+  else if(a==='ask-del-card'){S.confirmDelete={type:'card',id:t.getAttribute('data-id')};render();}
+  else if(a==='confirm-del-card'){S.techcards=S.techcards.filter(function(c){return c.id!==t.getAttribute('data-id');});if(S.selectedCardId===t.getAttribute('data-id'))S.selectedCardId=null;S.confirmDelete=null;saveTcDebounced();render();}
+  else if(a==='add-line'){var card=currentCard();if(!card)return;card.lines=card.lines||[];card.lines.push({id:uid(),ingredientId:'',brutto:'',netto:'',nettoManual:false,useCleaning:false,useThermo:false});saveTcDebounced();render();}
+  else if(a==='remove-line'){var card=S.techcards.find(function(c){return c.id===t.getAttribute('data-id');});if(!card)return;card.lines=(card.lines||[]).filter(function(l){return l.id!==t.getAttribute('data-line');});saveTcDebounced();render();}
+  else if(a==='reset-netto'){var card=currentCard();if(!card)return;var line=findLine(card,t.getAttribute('data-line'));if(!line)return;line.nettoManual=false;var ing=ingById(line.ingredientId);line.netto=ing?autoNetto(ing,parseFloat(line.brutto)||0,line.useCleaning,line.useThermo):0;saveTcDebounced();render();}
+});
+
+document.getElementById('app').addEventListener('input',function(e){
+  var t=e.target;
+  if(t.id==='currency-input'){S.settings.currency=t.value||'₽';saveSettings();softRefresh();return;}
+  if(t.matches('[data-cf]')){var card=currentCard();if(!card)return;card[t.getAttribute('data-cf')]=t.value;saveTcDebounced();softRefresh();return;}
+  if(t.matches('input[data-lf="brutto"]')){
+    var card=currentCard();if(!card)return;
+    var line=findLine(card,t.getAttribute('data-line'));if(!line)return;
+    line.brutto=t.value;
+    if(!line.nettoManual){var ing=ingById(line.ingredientId);line.netto=ing?autoNetto(ing,parseFloat(t.value)||0,line.useCleaning,line.useThermo):0;}
+    saveTcDebounced();softRefresh();return;
+  }
+  if(t.matches('input[data-lf="netto"]')){
+    var card=currentCard();if(!card)return;
+    var line=findLine(card,t.getAttribute('data-line'));if(!line)return;
+    line.netto=t.value;line.nettoManual=true;saveTcDebounced();softRefresh();return;
+  }
+  if(t.matches('[data-f]')){
+    var row=t.closest('tr');if(!row)return;
+    var v={};row.querySelectorAll('[data-f]').forEach(function(i){v[i.getAttribute('data-f')]=i.value;});
+    var hel=row.querySelector('[data-hint-for]');if(!hel)return;
+    var pr=parseFloat(v.packagePrice)||0,sz=parseFloat(v.packageSize)||0;
+    hel.textContent=sz>0?'Цена за 1 '+(v.unit||'')+'.: '+fmt(pr/sz)+' '+CUR():'Укажите объём упаковки → рассчитается цена за единицу';
+  }
+});
+
+document.getElementById('app').addEventListener('change',function(e){
+  var t=e.target;
+  if(t.matches('select[data-lf="ingredientId"]')){
+    var card=currentCard();if(!card)return;
+    var line=findLine(card,t.getAttribute('data-line'));if(!line)return;
+    line.ingredientId=t.value;line.nettoManual=false;line.useCleaning=false;line.useThermo=false;
+    var ing=ingById(t.value);line.netto=ing?autoNetto(ing,parseFloat(line.brutto)||0,false,false):0;
+    saveTcDebounced();render();return;
+  }
+  if(t.matches('input[type=checkbox][data-lf]')){
+    var card=currentCard();if(!card)return;
+    var line=findLine(card,t.getAttribute('data-line'));if(!line)return;
+    line[t.getAttribute('data-lf')]=t.checked;
+    if(!line.nettoManual){var ing=ingById(line.ingredientId);line.netto=ing?autoNetto(ing,parseFloat(line.brutto)||0,line.useCleaning,line.useThermo):0;}
+    saveTcDebounced();softRefresh();return;
+  }
+});
+
+loadAll();
+})();
+</script>
+</body>
+</html>
