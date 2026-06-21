@@ -778,6 +778,115 @@ function softRefresh(){
 
 function focus(sel){ setTimeout(function(){ var el=document.querySelector(sel); if(el) el.focus(); },0); }
 
+// ── IMPORT / EXPORT ────────────────────────────────────────
+function showImportModal() {
+  var overlay = document.createElement('div');
+  overlay.id = 'import-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(42,37,32,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">' +
+      '<h3 style="font-family:Fraunces,serif;margin:0 0 8px;font-size:18px;">Импорт сырья</h3>' +
+      '<p style="font-size:13px;color:#8A8174;margin:0 0 14px;">Вставьте содержимое файла <b>ingredients_import.json</b> в поле ниже и нажмите «Загрузить».</p>' +
+      '<textarea id="import-text" style="width:100%;height:180px;font-family:monospace;font-size:12px;border:1px solid #DDD4C0;border-radius:8px;padding:10px;resize:vertical;" placeholder=\'[{"id":"...","name":"..."},...]\' ></textarea>' +
+      '<div style="margin-top:8px;font-size:12px;color:#8A8174;">⚠️ Выберите режим:</div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">' +
+        '<button id="imp-add" style="flex:1;padding:10px;background:#4F6B3C;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Добавить к существующим</button>' +
+        '<button id="imp-replace" style="flex:1;padding:10px;background:#B2492F;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Заменить все</button>' +
+        '<button id="imp-cancel" style="flex:1;padding:10px;background:transparent;border:1px solid #DDD4C0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Отмена</button>' +
+      '</div>' +
+      '<div id="imp-msg" style="margin-top:10px;font-size:13px;"></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  document.getElementById('imp-cancel').onclick = function(){ document.body.removeChild(overlay); };
+  document.getElementById('imp-add').onclick = function(){ doImport(false, overlay); };
+  document.getElementById('imp-replace').onclick = function(){ doImport(true, overlay); };
+}
+
+function doImport(replace, overlay) {
+  var text = document.getElementById('import-text').value.trim();
+  var msg = document.getElementById('imp-msg');
+  try {
+    var data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error('Ожидается массив JSON');
+    // ensure ids
+    data.forEach(function(item){ if(!item.id) item.id = Date.now().toString(36)+Math.random().toString(36).slice(2,6); });
+    if (replace) {
+      S.ingredients = data;
+    } else {
+      // add only those not already present by name
+      var existing = S.ingredients.map(function(i){ return i.name.toLowerCase(); });
+      var added = 0;
+      data.forEach(function(item){
+        if(existing.indexOf(item.name.toLowerCase()) === -1){ S.ingredients.push(item); added++; }
+      });
+      msg.style.color = '#4F6B3C';
+      msg.textContent = 'Добавлено: ' + added + ' новых ингредиентов (дубликаты пропущены).';
+    }
+    save();
+    setTimeout(function(){ document.body.removeChild(overlay); render(); }, replace ? 500 : 1500);
+    if(replace){ msg.style.color='#4F6B3C'; msg.textContent='Загружено '+data.length+' ингредиентов!'; }
+  } catch(e) {
+    msg.style.color = '#B2492F';
+    msg.textContent = 'Ошибка: ' + e.message + '. Проверьте что скопировали весь файл целиком.';
+  }
+}
+
+function exportData() {
+  var data = { ingredients: S.ingredients, semis: S.semis, techcards: S.techcards, settings: S.settings, exportedAt: new Date().toISOString() };
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tehkarty_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function showFullImportModal() {
+  var overlay = document.createElement('div');
+  overlay.id = 'full-import-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(42,37,32,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:90%;">' +
+      '<h3 style="font-family:Fraunces,serif;margin:0 0 8px;font-size:18px;">Восстановить из резервной копии</h3>' +
+      '<p style="font-size:13px;color:#8A8174;margin:0 0 14px;">Вставьте содержимое файла <b>tehkarty_backup_*.json</b>. Все текущие данные будут заменены.</p>' +
+      '<textarea id="full-import-text" style="width:100%;height:180px;font-family:monospace;font-size:12px;border:1px solid #DDD4C0;border-radius:8px;padding:10px;resize:vertical;" placeholder=\'{"ingredients":[...],"semis":[...],"techcards":[...]}\' ></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;">' +
+        '<button id="full-imp-ok" style="flex:1;padding:10px;background:#B2492F;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Восстановить</button>' +
+        '<button id="full-imp-cancel" style="flex:1;padding:10px;background:transparent;border:1px solid #DDD4C0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Отмена</button>' +
+      '</div>' +
+      '<div id="full-imp-msg" style="margin-top:10px;font-size:13px;"></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('full-imp-cancel').onclick = function(){ document.body.removeChild(overlay); };
+  document.getElementById('full-imp-ok').onclick = function(){
+    var text = document.getElementById('full-import-text').value.trim();
+    var msg = document.getElementById('full-imp-msg');
+    try {
+      var data = JSON.parse(text);
+      if(data.ingredients) S.ingredients = data.ingredients;
+      if(data.semis) S.semis = data.semis;
+      if(data.techcards) S.techcards = data.techcards;
+      if(data.settings) S.settings = data.settings;
+      save(); msg.style.color='#4F6B3C'; msg.textContent='Данные восстановлены!';
+      setTimeout(function(){ document.body.removeChild(overlay); render(); }, 800);
+    } catch(e) { msg.style.color='#B2492F'; msg.textContent='Ошибка: '+e.message; }
+  };
+}
+
+// patch topbar to add buttons
+var _origTopbarH = topbarH;
+topbarH = function(){
+  var h = _origTopbarH();
+  // inject buttons before closing </header>
+  h = h.replace('</header>',
+    '<div style="width:100%;display:flex;gap:8px;padding-top:10px;flex-wrap:wrap;">' +
+      '<button onclick="showImportModal()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬆ Импорт сырья</button>' +
+      '<button onclick="exportData()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬇ Скачать резервную копию</button>' +
+      '<button onclick="showFullImportModal()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">♻ Восстановить из копии</button>' +
+    '</div></header>');
+  return h;
+};
+
 // ── BOOT ───────────────────────────────────────────────────
 load();
 render();
