@@ -611,6 +611,7 @@ document.getElementById('app').addEventListener('click', function(e){
 
   // tabs / global
   if(a==='import-ingredients'){ showImportModal(); }
+  else if(a==='import-semis'){ showImportSemisModal(); }
   else if(a==='export-data'){ exportData(); }
   else if(a==='restore-backup'){ showFullImportModal(); }
   else if(a==='set-tab'){S.tab=t.getAttribute('data-tab');S.editingIng=null;S.confirmDelete=null;render();}
@@ -884,11 +885,70 @@ topbarH = function(){
   h = h.replace('</header>',
     '<div style="width:100%;display:flex;gap:8px;padding-top:10px;flex-wrap:wrap;">' +
       '<button data-action="import-ingredients" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬆ Импорт сырья</button>' +
+      '<button data-action="import-semis" style="font-size:12px;padding:5px 12px;border:1px solid #F6EBD9;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;color:#A8782B;">⬆ Импорт полуфабрикатов</button>' +
       '<button data-action="export-data" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬇ Скачать резервную копию</button>' +
       '<button data-action="restore-backup" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">♻ Восстановить из копии</button>' +
     '</div></header>');
   return h;
 };
+
+function showImportSemisModal() {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(42,37,32,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">' +
+      '<h3 style="font-family:Fraunces,serif;margin:0 0 8px;font-size:18px;">Импорт полуфабрикатов</h3>' +
+      '<p style="font-size:13px;color:#8A8174;margin:0 0 14px;">Вставьте содержимое файла <b>semis_import.json</b>. Ингредиенты будут связаны автоматически по названию.</p>' +
+      '<textarea id="semis-import-text" style="width:100%;height:180px;font-family:monospace;font-size:12px;border:1px solid #DDD4C0;border-radius:8px;padding:10px;resize:vertical;" placeholder='[{"name":"Лук маринованный",...}]'></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+        '<button id="semi-imp-add" style="flex:1;padding:10px;background:#A8782B;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Добавить</button>' +
+        '<button id="semi-imp-replace" style="flex:1;padding:10px;background:#B2492F;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Заменить все</button>' +
+        '<button id="semi-imp-cancel" style="flex:1;padding:10px;background:transparent;border:1px solid #DDD4C0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Отмена</button>' +
+      '</div>' +
+      '<div id="semi-imp-msg" style="margin-top:10px;font-size:13px;"></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('semi-imp-cancel').onclick = function(){ document.body.removeChild(overlay); };
+  document.getElementById('semi-imp-add').onclick = function(){ doImportSemis(false, overlay); };
+  document.getElementById('semi-imp-replace').onclick = function(){ doImportSemis(true, overlay); };
+}
+
+function doImportSemis(replace, overlay) {
+  var text = document.getElementById('semis-import-text').value.trim();
+  var msg = document.getElementById('semi-imp-msg');
+  try {
+    var data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error('Ожидается массив JSON');
+    // match ingredientId by name
+    data.forEach(function(semi){
+      if (!semi.id) semi.id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      (semi.lines||[]).forEach(function(line){
+        if (!line.id) line.id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+        if (line.ingredientName && !line.ingredientId) {
+          var match = S.ingredients.find(function(i){
+            return i.name.toLowerCase().trim() === line.ingredientName.toLowerCase().trim();
+          });
+          if (match) line.ingredientId = match.id;
+        }
+      });
+    });
+    if (replace) {
+      S.semis = data;
+      msg.style.color='#4F6B3C'; msg.textContent='Загружено '+data.length+' полуфабрикатов!';
+    } else {
+      var existing = S.semis.map(function(s){ return s.name.toLowerCase(); });
+      var added = 0;
+      data.forEach(function(item){
+        if(existing.indexOf(item.name.toLowerCase()) === -1){ S.semis.push(item); added++; }
+      });
+      msg.style.color='#4F6B3C'; msg.textContent='Добавлено: '+added+' новых полуфабрикатов.';
+    }
+    save();
+    setTimeout(function(){ document.body.removeChild(overlay); render(); }, 1200);
+  } catch(e) {
+    msg.style.color='#B2492F'; msg.textContent='Ошибка: '+e.message;
+  }
+}
 
 // expose to global scope for onclick handlers
 window.showImportModal = showImportModal;
