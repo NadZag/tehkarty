@@ -610,7 +610,10 @@ document.getElementById('app').addEventListener('click', function(e){
   var a = t.getAttribute('data-action');
 
   // tabs / global
-  if(a==='set-tab'){S.tab=t.getAttribute('data-tab');S.editingIng=null;S.confirmDelete=null;render();}
+  if(a==='import-ingredients'){ showImportModal(); }
+  else if(a==='export-data'){ exportData(); }
+  else if(a==='restore-backup'){ showFullImportModal(); }
+  else if(a==='set-tab'){S.tab=t.getAttribute('data-tab');S.editingIng=null;S.confirmDelete=null;render();}
   else if(a==='dismiss-error'){S.error=null;render();}
 
   // ingredients
@@ -880,12 +883,17 @@ topbarH = function(){
   // inject buttons before closing </header>
   h = h.replace('</header>',
     '<div style="width:100%;display:flex;gap:8px;padding-top:10px;flex-wrap:wrap;">' +
-      '<button onclick="showImportModal()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬆ Импорт сырья</button>' +
-      '<button onclick="exportData()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬇ Скачать резервную копию</button>' +
-      '<button onclick="showFullImportModal()" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">♻ Восстановить из копии</button>' +
+      '<button data-action="import-ingredients" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬆ Импорт сырья</button>' +
+      '<button data-action="export-data" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">⬇ Скачать резервную копию</button>' +
+      '<button data-action="restore-backup" style="font-size:12px;padding:5px 12px;border:1px solid #DDD4C0;border-radius:6px;background:#fff;cursor:pointer;font-family:Inter,sans-serif;">♻ Восстановить из копии</button>' +
     '</div></header>');
   return h;
 };
+
+// expose to global scope for onclick handlers
+window.showImportModal = showImportModal;
+window.exportData = exportData;
+window.showFullImportModal = showFullImportModal;
 
 // ── BOOT ───────────────────────────────────────────────────
 load();
