@@ -887,6 +887,11 @@ topbarH = function(){
   return h;
 };
 
+// expose to global scope for onclick handlers
+window.showImportModal = showImportModal;
+window.exportData = exportData;
+window.showFullImportModal = showFullImportModal;
+
 // ── BOOT ───────────────────────────────────────────────────
 load();
 render();
